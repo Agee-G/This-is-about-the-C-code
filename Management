@@ -1,0 +1,470 @@
+#include"company_staff.h"
+#include<iostream>
+#include<fstream>
+#include <iomanip>
+#include<string>
+#include<cassert>
+#include<cstdarg>
+#include<cstdlib>
+#include<cctype>
+#include<cmath>
+#include<limits>
+#include<cstdarg>
+#include<ctime>
+#include<cstdio>
+#include <string>
+using namespace std;
+#define MAX_ERROR_MESSAGE_LEN 100
+class Error
+{
+private:
+	char message[MAX_ERROR_MESSAGE_LEN];//异常欣喜
+public:
+	Error(char mes[] = "一般性异常") { strcpy(message, mes); }//构造函数
+	void Show() const { cout << message << endl; }//显示异常信息
+};
+int main(void) {
+	try//用try封装可能出现异常的代码
+	{
+		StaffManage objStaffManage;//员工管理对象
+		objStaffManage.Run();//处理员工管理
+	}
+	catch (Error err)//捕捉并处理异常
+	{
+		err.Show();//显示异常欣喜
+	}
+	system("PAUSE");//暂停呗
+	return 0;//结束返回0
+}
+#ifndef  __COMPANY_STAFF_H__
+#define __COMPANY_STAFF_H__
+#pragma warning(disable:4996)
+#include<iostream>
+#include<fstream>
+#include <iomanip>
+#include<string>
+#include<cassert>
+#include<cstdarg>
+#include<cstdlib>
+#include<cctype>
+#include<cmath>
+#include<limits>
+#include<cstdarg>
+#include<ctime>
+#include<cstdio>
+#include <string>
+using namespace std;
+class Staff {//设立员工类
+protected:
+	char num[8];//编号
+	char name[12];//姓名
+	int age;//年龄
+public:
+	Staff() {}//构造函数
+	virtual ~Staff() {}//虚析构函数，作用：这样做是为了当用一个基类的指针删除一个派生类的对象时，派生类的析构函数会被调用。
+	const char *GetNum() const {
+		return num;//返回编号
+	}
+	virtual void Input() = 0;//输出函数
+	virtual void Show() const = 0;//显示数据
+	virtual void Read(fstream &f) const = 0;//读文件
+	virtual void Write(fstream &f) const = 0;//写文件
+};
+
+class Salesman :virtual public Staff//派生销售员类
+{
+protected:
+	double sales;//销售额
+	//char prof[12];//职称
+	char major[12];//专业
+public:
+	Salesman() {}//构造函数
+	virtual ~Salesman() {};//析构函数
+	void Input() {//输入函数
+		cout << "编号:";
+		cin >> num;//输入编号
+		cout << "姓名:";
+		cin >> name;//输入姓名
+		cout << "年龄:";
+		cin >> age;//输入年龄
+		cout << "销售额:";
+		cin >> sales;//输入专业
+		//cout << "职称:";
+	//	cin >> prof;//输入职称
+	}
+	void Show() const//Show出来！！！
+	{
+		cout << setw(8) << "人员编号："<<num << setw(12) << "姓名：" << name << setw(12) << "年龄:"<< age<< setw(12) << "销售额:" << sales  << endl;
+	}
+	void Read(fstream &f) const { f.read((char *)this, sizeof(Salesman)); }//读文件
+	void Write(fstream &f) const { f.write((char *)this, sizeof(Salesman)); }//写文件
+};
+class Manager :virtual public Staff//经理类 下步由领导类改成经理类
+{
+protected:
+	//char job[12];//职务
+	//char dep[12];//部门
+	double salary;//年薪
+public:
+	Manager() {}//构造函数
+	virtual ~Manager() {}//虚析构函数
+	void Input()
+	{
+		cout << "编号:";
+		cin >> num;//输入编号
+		cout << "姓名:";
+		cin >> name;//输入姓名
+		cout << "年龄:";
+		cin >> age;//输入年龄
+		//cout << "职务:";
+		//cin >> job;//输入职务
+		//cout << "部门:";
+		//cin >> dep;//输入部门
+		cout << "年薪";
+		cin >> salary;
+	}
+	void Show() const
+	{
+		cout << setw(8) <<"编号:"<< num << setw(12) << "姓名:"<<name<< setw(12) <<"年龄:"<<age << setw(12) << "年薪"<<salary<< endl;
+	}
+	void Read(fstream &f) const { f.read((char *)this, sizeof(Manager)); }//读文件
+	void Write(fstream &f) const { f.write((char *)this, sizeof(Manager)); }//写文件
+};
+class SalesManager :public Salesman, public Manager//一会由主任工程师类改为销售经理类
+{
+public:
+	SalesManager() {}//构造函数
+	virtual ~SalesManager() {}//析构函数
+	void Input()
+	{
+		cout << "编号:";
+		cin >> num;//输入编号
+		cout << "姓名:";
+		cin >> name;//输入姓名
+		cout << "年龄:";
+		cin >> age;//输入年龄
+		cout << "专业:";
+		cin >> major;//输入专业
+		//cout << "职称:";
+	//	cin >> prof;//输入职称
+	//	cout << "职务:";
+		//cin >> job;//输入职务
+	//	cout << "部门:";
+		//cin >> dep;//输入部门
+	}
+	void Show() const
+	{
+		cout << setw(8) << "编号:"<<num << setw(12) <<"姓名:"<< name << setw(12) <<"年龄:" <<age << setw(12) <<"专业"<<major<< endl;
+	}
+	void Read(fstream &f) const { f.read((char *)this, sizeof(SalesManager)); }//读文件
+	void Write(fstream &f) const { f.write((char *)this, sizeof(SalesManager)); }//写文件
+};
+struct IndexType//索引结构
+{
+	bool delTag;//删除标志
+	char num[8];//编号
+	int position;//在数据文件中的相对位置
+	char staffType;//人员类型，S:销售员M:经理 A:销售经理
+};
+#define NUM_OF_INCREMENT 1000//增量
+class StaffManage//员工管理类
+{
+private:
+	fstream file;//人员数据文件
+	IndexType *indexTable;//索引表
+	int maxSize;//索引表最大索引项个数
+	int count;//索引项个数
+	void AddIndexItem(const IndexType &e);  //在索引表中增加索引项
+	void AddData();  //增加数据
+	void UpdateData();  //更新数据
+	void SearchData();  //查询数据
+	void Deletedata();  //删除数据，只作删除标志
+	void Pack();  //在物理上删除作有删除标记的记录
+public:
+	StaffManage();//构造函数
+	virtual ~StaffManage();//析构函数
+	char GetChar(istream &in = cin)//从输入流in中跳过空格及制表符获取1个字符
+	{
+		char ch;//设立个临时变量
+		while ((ch = in.peek()) != EOF && ((ch = in.get()) == ' ' || ch == '\t'));//文件结束符（peek()函数从输入留中接受一个字符，流的当前位置不变） 空格（get()函数从输入流中接受1个字符，流的当前位置向后移1个位置）
+		return ch;
+	}
+	bool UserSaysYes() {
+		char ch;//用户回答字符
+		bool initialResponse = true;//初始回答
+		do {
+			if (initialResponse)cout << "(y,n)?";//初始回答
+			else cout << "用y或n回答:";//非初始回答
+			while ((ch = GetChar()) == '\n');//跳过空格，制表符及换行符获取1个字符
+			initialResponse = false;//非初始回答
+		} while (ch != 'y'&&ch != 'Y'&&ch != 'n'&&ch != 'N');
+		while (GetChar() != '\n');//跳过当前行后面的字符
+		if (ch == 'y' || ch == 'Y')return true;//肯定答案返回true
+		else return false;//否定答案返回false
+	}
+	void Run();//处理电话号码簿
+};
+StaffManage::StaffManage() {//员工管理类的实现   一个没有无参的构造函数
+	ifstream indexFile("staff.idx", ios::binary);//建立输入索引文件
+	if(!indexFile.fail())
+	{//打开文件成功
+		indexFile.seekg(0, ios::end);//定位
+		count = indexFile.tellg() / sizeof(IndexType);//索引项个数
+		maxSize = count + NUM_OF_INCREMENT;//索引表最大索引项个数
+		indexTable = new IndexType[maxSize];//为索引表分配储存空间
+		indexFile.seekg(0, ios::beg);//定位
+		int i = 0;//临时变量
+		indexFile.read((char *)&indexTable[i++], sizeof(IndexType));//读记录
+		while (!indexFile.eof());
+		{//文件未结束
+			indexFile.read((char *)&indexTable[i++], sizeof(IndexType));//读记录
+		}
+		indexFile.close();//关闭文件
+	}
+	else
+	{//打开文件失败
+		count = 0;//索引项个数
+		maxSize = count + NUM_OF_INCREMENT;//索引表最大索引项个数
+		indexTable = new IndexType[maxSize];//为索引表分配储存空间
+	}
+	ifstream iFile("staff.dat");//建立输出文件
+	if (iFile.fail())
+	{//打开文件失败，表示不存在文件
+		ofstream oFile("staff.dat");//建立输出文件
+		if (oFile.fail()) throw("打开文件失败!");//抛出异常
+		oFile.close();//关闭文件
+	}
+	else
+	{//存在文件
+		iFile.close();//关闭文件
+	}
+	file.open("staff.dat", ios::in | ios::out | ios::binary);//以读写方式打开文件
+	if (file.fail()) throw("打开文件失败!"); //抛出异常
+}
+StaffManage::~StaffManage()//析构函数
+{
+	ofstream indexFile("staff.idx", ios::binary);//建立输出索引文件
+	for (int i = 0; i < count; i++)
+	{//写索引表
+		indexFile.write((char *)&indexTable[i], sizeof(IndexType));//写文件
+	}
+	indexFile.close();//关闭文件
+	file.close();//关闭文件
+}
+void StaffManage::AddIndexItem(const IndexType &e)//在索引表中增加索引项
+{
+	if (count >= maxSize)
+	{//索引表溢出
+		maxSize = maxSize + NUM_OF_INCREMENT;//增加索引表容量
+		IndexType *temIndexTable = new IndexType[maxSize];//临时索引表
+		for (int i = 0; i < count; i++)
+			temIndexTable[i] = indexTable[i];//复制索引表
+		delete []indexTable;//释放索引表储存空间
+		indexTable = temIndexTable;//指向临时索引表
+	}
+	indexTable[count++] = e;//加入到索引表中
+}
+void StaffManage::AddData()//增加数据
+{
+	Staff *pStaff;//人员
+	IndexType item;//索引项
+	item.delTag = false;//删除标志
+	file.seekg(0, ios::end);//定位
+	do
+	{
+		do
+		{
+			cout << "人员类型（s:销售员,m:经理,a: 销售经理):";
+			cin >> item.staffType;//输入人员类型
+			item.staffType = tolower(item.staffType);//tolower转换为小写字母
+		} while (item.staffType !='s'&&item.staffType != 'm'&&item.staffType != 'a');
+		if (item.staffType == 's')pStaff = new Salesman;//分配储存空间
+		else if (item.staffType == 'm')pStaff = new Manager;//分配储存空间
+		else pStaff = new SalesManager;//分配储存空间
+		pStaff->Input();//输入数据
+		strcpy(item.num, pStaff->GetNum());//复制函数
+		item.position = file.tellg();//写入数据文件的位置
+		AddIndexItem(item);//在索引表中增加索引项
+		pStaff->Write(file);//写文件
+		delete pStaff;//释放储存空间
+		cout << "继续添加么？";
+	} while (UserSaysYes());//回答肯定时循环
+}
+void StaffManage::UpdateData()//更新数据类
+{
+	Staff *pStaff;//人员
+	IndexType item;//索引项
+	item.delTag = false;//删除标志
+	char num[12];//编号
+	cout << "人员编号：";
+	cin >> num;//输入人员编号
+	int pos;//一个临时变量
+	for (pos = 0; pos < count; pos++)//for循环遍历查找满足条件的索引项
+	{
+		if (strcmp(num, indexTable[pos].num) == 0 && !indexTable[pos].delTag)//编号相同和未被删除
+			break;
+	}
+	if (pos < count)
+	{//查询成功
+		file.seekg(indexTable[pos].position, ios::beg);//定位
+		if (indexTable[pos].staffType == 's')pStaff = new Salesman;//分配储存空间
+		else if (indexTable[pos].staffType == 'm')pStaff = new Manager;//分配储存空间
+		else pStaff = new SalesManager;//分配储存空间
+		pStaff->Read(file);//读文件
+		pStaff->Show();//显示信息
+		do
+		{
+			cout << " 人员类型（s:销售员, m : 经理, a :销售经理):";
+			cin >> item.staffType;//输入人员类型
+			item.staffType = tolower(item.staffType);// tolower转换为小写字母
+		} while (item.staffType != 's'&&item.staffType != 'm'&&item.staffType != 'a');
+		if (item.staffType == 's')pStaff = new Salesman;//分配储存空间
+		else if (item.staffType == 'm')pStaff = new Manager;//分配储存空间
+		else pStaff = new SalesManager;//分配储存空间
+		pStaff->Input();//输入信息
+		if (item.staffType == indexTable[pos].staffType)//人员类型未变
+		{
+			strcpy(indexTable[pos].num, pStaff->GetNum());//复制编号
+			file.seekg(indexTable[pos].position, ios::beg);//定位
+		}
+		else
+		{//人员变量发生改变
+			indexTable[pos].delTag = true;//删除标志
+			strcpy(item.num, pStaff->GetNum());//复制编号
+			file.seekg(0, ios::end);//定位
+			item.position = file.tellg();//写入数据文件的位置
+			AddIndexItem(item);//在索引表中增加索引项
+		}
+		pStaff->Write(file);//写文件
+		delete pStaff;	//释放储存空间
+	}
+	else
+	{
+		cout << "查询失败" << endl;//恢复好标志位goodbit
+		file.clear();
+	}
+}
+void StaffManage::SearchData()//查询数据
+{
+	Staff *pStaff;//人员
+	char num[12];//编号
+	cout << "人员编号：";
+	cin >> num;//输入人员变量
+	int pos;//申请临时变量
+	for (pos = 0; pos < count; pos++)
+	{//查询满足条件的索引项
+		if (strcmp(num, indexTable[pos].num) == 0 && !indexTable[pos].delTag)//编号相同和未被删除
+			break;
+	}
+	if (pos < count)
+	{//查询成功
+	file.seekg(indexTable[pos].position, ios::beg);//定位
+	if(indexTable[pos].staffType=='s')pStaff = new Salesman;//分配储存空间
+	else if (indexTable[pos].staffType == 'm')pStaff = new Manager;//分配储存空间
+	else pStaff = new SalesManager;//分配储存空间
+	pStaff->Read(file);//读文件
+	pStaff->Show();//显示信息
+	delete pStaff;//释放储存空间
+	}
+	else
+	{//查询失败
+		cout << "查无此人" << endl;//恢复好标志位goodbit
+		file.clear();
+	}
+}
+void StaffManage::Deletedata()//删除数据，只作删除标志
+{
+	Staff *pStaff;//人员
+	IndexType item;//索引项
+	item.delTag = false;//删除标志
+	char num[12];//编号
+	cout << "人员编号：";
+	cin >> num;
+	int pos;
+	for (pos = 0; pos < count; pos++)
+	{//查找满足条件的索引项
+		if (strcmp(num, indexTable[pos].num) == 0 && !indexTable[pos].delTag)//编号相同和未被删除
+			break;
+	}
+	if (pos < count)
+	{//查询成功
+		file.seekg(indexTable[pos].position , ios::beg);//定位
+		if (indexTable[pos].staffType == 's')pStaff = new Salesman;//分配储存空间
+		else if (indexTable[pos].staffType == 'm')pStaff = new Manager;//分配储存空间
+		else pStaff = new SalesManager;//分配储存空间
+		pStaff->Read(file);//读文件
+		cout << "被删除记录为:" << endl;
+		pStaff->Show();//显示信息
+		indexTable[pos].delTag = true;//删除标志
+		delete pStaff;//释放储存空间
+		cout << "删除成功" << endl;
+	}
+	else
+	{
+		cout << "删除失败" << endl;//恢复好标志位goodbit
+		file.clear();
+	}
+}
+void StaffManage::Pack() {//在物理上删除作有删除标记的记录
+	ofstream oFile("tem.dat");//建立输出文件（用于建立一个空文件）
+	oFile.close();//关闭文件
+	fstream outFile("tem.dat", ios::app | ios::binary);//建立文件对象
+	Staff *pStaff;//人员
+	int cur_count = 0;//新索引个数
+	for (int pos = 0; pos < count; pos++)
+	{//处理索引表的每一项
+		if (!indexTable[pos].delTag)
+		{//未被删除
+			file.seekg(indexTable[pos].position, ios::beg);//定位
+			indexTable[pos].position = file.tellg();//新文件的写入位置
+			if (indexTable[pos].staffType == 's ')pStaff = new Salesman;//分配储存空间
+			else if (indexTable[pos].staffType == 'm')pStaff = new Manager;//分配储存空间
+			else pStaff = new SalesManager;//分配储存空间
+			pStaff->Read(file);//读文件
+			pStaff->Write(outFile);//写文件
+			delete pStaff;//释放内存空间
+			indexTable[cur_count++] = indexTable[pos];//索引项复制到新位置
+		}
+	}
+	count = cur_count;//新索引项个数
+	file.close();//关闭文件
+	outFile.close();//关闭文件
+	remove("staff.dat");//删除文件
+	rename("tem.dat", "staff.dat");//更改文件名
+	file.open("staff.dat", ios::in|ios::out|ios::binary);//重新打开文件
+}
+void StaffManage::Run()//跑程序啦！！
+{
+	int select;//选择菜单号
+	do
+	{
+		cout << "请选择:" << endl;
+		cout << "1.增加数据" << endl;
+		cout << "2.更新数据" << endl;
+		cout << "3.查询数据" << endl;
+		cout << "4.删除数据" << endl;
+		cout << "5.重组文件" << endl;
+		cout << "6.退出" << endl;
+		cin >> select;//输出你先干嘛的选项
+		while (cin.get() != '\n');
+			switch(select)
+		{
+			case 1:
+				AddData();//字面意思
+				break;
+			case 2:
+				UpdateData();//字面意思
+				break;
+			case 3:
+				SearchData();//字面意思
+				break;
+			case 4:
+				Deletedata();//字面意思
+				break;
+			case 5:
+				Pack();//在物理上删除作有删除标记的记录
+				break;
+		}
+	} while (select != 6);//想退出按6
+}
+#endif
